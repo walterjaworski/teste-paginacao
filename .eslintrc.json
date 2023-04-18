@@ -17,14 +17,11 @@
   ],
   "rules": {
     "react/jsx-filename-extension": [
-      1,
-      {
-        "extensions": [
-          ".js",
-          ".jsx"
-        ]
-      }
+      1, { "extensions": [ ".js", ".jsx" ]}
     ],
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "comma-dangle": "off",
+    "import/prefer-default-export": "off",
+    "react/jsx-one-expression-per-line": "off"
   }
 }
