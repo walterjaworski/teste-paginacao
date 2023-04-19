@@ -17,29 +17,53 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   const candidatesToShow = useMemo(
+    /**
+     * Filtra os dados pelo index atual usando o slice
+     * Inicia com o index atual e vai até o index atual + CANDIDATES_FOR_PAGE;
+     * */
     () => candidates.slice(currentIndex, currentIndex + CANDIDATES_FOR_PAGE),
     [currentIndex, candidates]
   );
 
   const totalPages = useMemo(
+    /**
+     * Calcula o total de páginas dividindo o total de candidatos pelo CANDIDATES_FOR_PAGE
+     * Arredonda para baixo com o Math.floor
+     */
     () => Math.floor(candidates.length / CANDIDATES_FOR_PAGE),
     [candidates]
   );
 
   const currentPage = useMemo(
+    /**
+     * Calcula a página atual dividindo o index atual pelo CANDIDATES_FOR_PAGE
+     * Arredonda para baixo com o Math.floor
+     * */
     () => Math.floor(currentIndex / CANDIDATES_FOR_PAGE),
     [currentIndex]
   );
 
   function handleNextPage() {
+    /**
+     * Atualiza o index atual somando o index atual com o CANDIDATES_FOR_PAGE
+     * O Math.max garante que o index não seja menor que 0
+     */
     setCurrentIndex((prevIndex) => Math.max(prevIndex + CANDIDATES_FOR_PAGE, 0));
   }
 
   function handlePrevPage() {
+    /**
+     * Atualiza o index atual subtraindo o index atual com o CANDIDATES_FOR_PAGE
+     * O Math.min garante que o index não seja maior que o total de candidatos
+     * */
     setCurrentIndex((prevIndex) => Math.min(prevIndex - CANDIDATES_FOR_PAGE, candidates?.length));
   }
 
   useEffect(() => {
+    /**
+     * IIFE - Immediately Invoked Function Expression
+     * Função auto invocada
+     * */
     (async function getCandidatesList() {
       setLoading(true);
       try {
