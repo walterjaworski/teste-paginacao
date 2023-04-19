@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 import { ThemeProvider } from 'styled-components';
 
@@ -7,99 +7,95 @@ import defaultTheme from './styles/themes/default';
 
 import * as S from './styles';
 
+const API_URL = 'https://resultados.tse.jus.br/oficial/ele2022/544/dados-simplificados/br/br-c0001-e000544-r.json';
+
+const CANDIDATES_FOR_PAGE = 2;
+
 export default function App() {
-  const [candidatesList, setCandidatesList] = useState([]);
-  const [candidatesFilteredList, setCandidatesFilteredList] = useState([]);
-  const [activePage, setActivePage] = useState(0);
-  const [maxPage, setMaxPage] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  function roundUpToNearestEven(number) {
-    const rounded = Math.ceil(number);
-    return rounded % 2 === 0 ? rounded : rounded + 1;
-  }
+  const candidatesToShow = useMemo(
+    () => candidates.slice(currentIndex, currentIndex + CANDIDATES_FOR_PAGE),
+    [currentIndex, candidates]
+  );
 
-  function getPage(pageNumber) {
-    const startIndex = (pageNumber - 1) * 2;
-    const endIndex = startIndex + 2;
+  const totalPages = useMemo(
+    () => Math.floor(candidates.length / CANDIDATES_FOR_PAGE),
+    [candidates]
+  );
 
-    return setCandidatesFilteredList(candidatesList.slice(startIndex, endIndex));
-  }
+  const currentPage = useMemo(
+    () => Math.floor(currentIndex / CANDIDATES_FOR_PAGE),
+    [currentIndex]
+  );
 
   function handleNextPage() {
-    setActivePage((prevState) => prevState + 1);
-    getPage(activePage);
+    setCurrentIndex((prevIndex) => Math.max(prevIndex + CANDIDATES_FOR_PAGE, 0));
   }
 
   function handlePrevPage() {
-    setActivePage((prevState) => prevState - 1);
-    getPage(activePage);
-  }
-
-  async function getCandidatesList() {
-    await fetch('https://resultados.tse.jus.br/oficial/ele2022/544/dados-simplificados/br/br-c0001-e000544-r.json')
-      .then((response) => response.json())
-      .then((texto) => {
-        setCandidatesList(texto.cand);
-      })
-      .catch((error) => console.log('Error: ', error));
+    setCurrentIndex((prevIndex) => Math.min(prevIndex - CANDIDATES_FOR_PAGE, candidates?.length));
   }
 
   useEffect(() => {
-    getCandidatesList();
-    setMaxPage(roundUpToNearestEven(candidatesList.length / 2));
+    (async function getCandidatesList() {
+      setLoading(true);
+      try {
+        const response = await fetch(API_URL);
+        const { cand } = await response.json();
+        setCandidates(cand);
+      } catch (error) {
+        console.error('API FAIL REQUEST: ', error);
+      } finally {
+        setLoading(false);
+      }
+    }());
   }, []);
-
-  useEffect(() => {
-    getPage(activePage);
-  }, [activePage]);
-
-  console.log({ maxPage });
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <GlobalStyles />
-
       <S.Container>
         <S.Title>Resultado eleições 2022</S.Title>
         <S.ListContainer>
-          {candidatesFilteredList.length > 0 && (
-            candidatesFilteredList.map((candidato, index) => (
-              <S.LineContainer
-                key={candidato.n}
-                style={{
-                  backgroundColor: index % 2 === 0
-                    ? '#eee'
-                    : '#ddd'
-                }}
-              >
-                <h2>{candidato.nm}</h2>
-                <span>{candidato.vap}</span>
-              </S.LineContainer>
-            ))
+          {!loading && candidatesToShow?.map((candidato, index) => (
+            <S.LineContainer
+              key={candidato.n}
+              style={{
+                backgroundColor: index % 2 === 0 ? '#eee' : '#ddd',
+              }}
+            >
+              <h2>{candidato.nm}</h2>
+              <span>{candidato.vap}</span>
+            </S.LineContainer>
+          ))}
+
+          {loading && (
+            <strong>Carregando...</strong>
           )}
         </S.ListContainer>
         <S.Actions>
-          <button
-            type="button"
-            onClick={handlePrevPage}
-            disabled={activePage === 0}
-          >
-            anterior
+          <button type="button" onClick={handlePrevPage} disabled={!currentPage}>
+            Anterior
           </button>
-          <span>
-            {candidatesList.length > 0 && `${candidatesList.length} resultados`}
-            {candidatesList.length === 0 && 'Nenhum candidato encontrado'}
-          </span>
-          <button
-            type="button"
-            onClick={handleNextPage}
-            // disabled={activePage >= maxPage}
-          >
-            próximo
+
+          <div>
+            <span>
+              {currentPage} / {totalPages}
+            </span>
+            <small>
+              {candidates.length > 0 && `${candidates.length} resultados`}
+              {candidates.length === 0 && 'Nenhum candidato encontrado'}
+            </small>
+          </div>
+
+          <button type="button" onClick={handleNextPage} disabled={currentPage === totalPages}>
+            Próximo
           </button>
         </S.Actions>
       </S.Container>
-
     </ThemeProvider>
   );
 }
