@@ -52,4 +52,12 @@ export const Actions = styled.div`
       cursor: default;
     }
   }
+
+  div {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+
+    gap: 8px;
+}
 `;
